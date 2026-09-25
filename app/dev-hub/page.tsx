@@ -168,6 +168,13 @@ export default function DevHubPage() {
     }
   };
 
+  const handleClearAndReloadSeed = () => {
+    if (confirm('¿Estás seguro de que quieres limpiar localStorage y recargar los datos del seed con 10 comercios por categoría?')) {
+      localStorage.removeItem('villaguay-outbid-state');
+      window.location.reload();
+    }
+  };
+
   const handleMobilePreview = () => {
     setMobilePreview(true);
     window.open('/', '_blank', 'width=375,height=667');
@@ -329,6 +336,20 @@ export default function DevHubPage() {
               <div>
                 <p className="text-sm font-display font-bold text-foreground">Resetear Estado Local</p>
                 <p className="text-xs text-muted-foreground font-body">Limpiar todos los datos guardados</p>
+              </div>
+            </button>
+
+            {/* Clear and reload seed */}
+            <button
+              onClick={handleClearAndReloadSeed}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl glass-panel-hover text-left hover:bg-neon-gold/10 hover:border-neon-gold/30 transition-all"
+            >
+              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-neon-gold/15 border border-neon-gold/40 flex items-center justify-center">
+                <Database className="h-5 w-5 text-neon-gold" />
+              </div>
+              <div>
+                <p className="text-sm font-display font-bold text-foreground">Recargar Seed (10 por categoría)</p>
+                <p className="text-xs text-muted-foreground font-body">Cargar datos actualizados con 10 comercios</p>
               </div>
             </button>
           </div>

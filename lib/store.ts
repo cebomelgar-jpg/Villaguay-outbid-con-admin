@@ -62,7 +62,7 @@ export interface AppState {
 
 const STORAGE_KEY = 'villaguay-outbid-state';
 const EVENT_NAME = 'villaguay-outbid-update';
-const CURRENT_VERSION = '3.0'; // Version to detect Apify data integration
+const CURRENT_VERSION = '4.0'; // Version to detect 10-position ranking update
 
 function getDefaultState(): AppState {
   return {
