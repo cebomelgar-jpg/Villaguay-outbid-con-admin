@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Calendar, Crown, Swords, Trophy, Lock, Eye, Store } from 'lucide-react';
+import { Calendar, Crown, Swords, Trophy, Lock, Eye, Store, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Ticker } from '@/components/Ticker';
 import { Header } from '@/components/Header';
@@ -51,6 +51,7 @@ export default function Home() {
   const [claimOpen, setClaimOpen] = useState(false);
   const [appState, setAppState] = useState<AppState | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showMore, setShowMore] = useState(false); // For pagination
 
   const { play } = useSound();
 
@@ -196,6 +197,10 @@ export default function Home() {
   const currentSub = currentCategory?.subcategories.find((s) => s.id === selectedSubcategory);
   const isEmpty = rankedBusinesses.length === 0;
 
+  // Show first 9 positions initially (positions 2-10), then load more if needed
+  const visibleRest = showMore ? rest : rest.slice(0, 9);
+  const hasMoreBusinesses = rest.length > 9;
+
   const currentLowestBid = rankedBusinesses.length > 0
     ? rankedBusinesses[rankedBusinesses.length - 1].bid
     : MIN_BID;
@@ -309,7 +314,7 @@ export default function Home() {
                 {leader && <LeaderCard business={leader} onOutbid={handleOutbid} onClaim={handleClaim} />}
                 <div className="space-y-3">
                   <AnimatePresence>
-                    {rest.map((business, index) => (
+                    {visibleRest.map((business, index) => (
                       <CompactCard
                         key={business.id}
                         business={business}
@@ -321,6 +326,18 @@ export default function Home() {
                     ))}
                   </AnimatePresence>
                 </div>
+                {hasMoreBusinesses && (
+                  <button
+                    onClick={() => {
+                      play('click');
+                      setShowMore(true);
+                    }}
+                    className="w-full py-3 px-4 rounded-xl glass-panel border border-neon-purple/30 text-neon-purple font-display font-bold text-sm hover:bg-neon-purple/10 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                    {showMore ? 'Ver menos comercios' : 'Cargar más comercios del rubro'}
+                  </button>
+                )}
                 <LastPositionCard
                   onJoin={handleLastPositionJoin}
                   currentLowestBid={currentLowestBid}
