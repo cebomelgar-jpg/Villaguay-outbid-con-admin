@@ -13,6 +13,11 @@ import { ReglamentoModal } from '@/components/ReglamentoModal';
 import { PublicarComercioModal } from '@/components/PublicarComercioModal';
 import { OutbidModal, type BidSubmission } from '@/components/OutbidModal';
 import { Confetti } from '@/components/Confetti';
+import { LastPositionCard } from '@/components/LastPositionCard';
+import { LastPositionModal } from '@/components/LastPositionModal';
+import { GlobalLeaders } from '@/components/GlobalLeaders';
+import { ClaimBusinessModal } from '@/components/ClaimBusinessModal';
+import { MonthCountdown } from '@/components/MonthCountdown';
 import { useSound } from '@/hooks/use-sound';
 import {
   categories,
@@ -34,18 +39,23 @@ import {
 
 export default function Home() {
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('gastronomia');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [reglamentoOpen, setReglamentoOpen] = useState(false);
   const [publicarOpen, setPublicarOpen] = useState(false);
   const [outbidTarget, setOutbidTarget] = useState<Business | null>(null);
   const [outbidOpen, setOutbidOpen] = useState(false);
-  const [appState, setAppState] = useState<AppState>(getStoredState());
+  const [lastPositionOpen, setLastPositionOpen] = useState(false);
+  const [claimTarget, setClaimTarget] = useState<Business | null>(null);
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [appState, setAppState] = useState<AppState | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
   const { play } = useSound();
 
   useEffect(() => {
+    setIsMounted(true);
     setAppState(getStoredState());
     const unsub = subscribeToState(() => setAppState(getStoredState()));
 
@@ -55,33 +65,12 @@ export default function Home() {
     return unsub;
   }, []);
 
-  const allBusinesses = appState.businesses;
-  const allEvents = appState.events;
-
-  const rankedBusinesses = getBusinessesByCategory(selectedCategory, selectedSubcategory, allBusinesses);
-  const leader = rankedBusinesses[0];
-  const rest = rankedBusinesses.slice(1);
-  const currentCategory = categories.find((c) => c.id === selectedCategory);
-  const currentSub = currentCategory?.subcategories.find((s) => s.id === selectedSubcategory);
-  const isEmpty = rankedBusinesses.length === 0;
-
-  const handleOutbid = (business: Business) => {
-    play('click');
-    setOutbidTarget(business);
-    setOutbidOpen(true);
-  };
-
-  const handleEmptyBid = () => {
-    play('click');
-    setOutbidTarget(null);
-    setOutbidOpen(true);
-  };
-
   const handleConfirmBid = useCallback(
     (submission: BidSubmission) => {
       const { business: newBusiness, newEvents } = submission;
 
       setAppState((prev) => {
+        if (!prev) return prev;
         const existing = prev.businesses.find((b) => b.id === newBusiness.id);
         const businesses = existing
           ? prev.businesses.map((b) => (b.id === newBusiness.id ? { ...b, bid: newBusiness.bid } : b))
@@ -104,62 +93,112 @@ export default function Home() {
         return next;
       });
 
-      const isLeader = newBusiness.bid >= (leader?.bid ?? 0);
+      const isLeader = newBusiness.bid >= (appState?.businesses.find(b => b.id === newBusiness.id)?.bid ?? 0);
       setShowConfetti(true);
       play(isLeader ? 'levelup' : 'coin');
       setTimeout(() => setShowConfetti(false), 3000);
     },
-    [leader, play],
+    [play, setAppState, appState],
   );
 
-  const handlePublish = (data: {
-    category: CategoryId;
-    subcategory: string;
-    name: string;
-    bid: number;
-    whatsapp: string;
-    instagram: string;
-    slogan: string;
-    imageUrl: string;
-  }) => {
-    const newBusiness: Business = {
-      id: 'pub-' + Date.now(),
-      name: data.name,
-      category: data.category,
-      subcategory: data.subcategory,
-      bid: data.bid,
-      owner: 'Vos',
-      address: 'Villaguay, Entre Ríos',
-      image: data.imageUrl || 'https://images.pexels.com/photos/3182834/pexels-photo-3182834.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-      whatsapp: data.whatsapp.startsWith('http') ? data.whatsapp : `https://wa.me/${data.whatsapp.replace(/\D/g, '')}`,
-      instagram: data.instagram.startsWith('http') ? data.instagram : `https://instagram.com/${data.instagram.replace('@', '')}`,
-      slogan: data.slogan || 'Nuevo comercio en el ranking',
-      daysAtTop: 0,
-      clickCount: 0,
-    };
-
-    setAppState((prev) => {
-      const catLabel = categories.find((c) => c.id === data.category)?.label || '';
-      const subLabel = categories.find((c) => c.id === data.category)?.subcategories.find((s) => s.id === data.subcategory)?.label || '';
-      const newEvent: LiveEvent = {
-        id: 'pub-event-' + Date.now(),
-        message: `🆕 ${data.name} se sumó al ranking de ${catLabel}${subLabel ? ` · ${subLabel}` : ''} con ${formatARS(data.bid)}`,
-        timeAgo: 'hace instantes',
+  const handlePublish = useCallback(
+    (data: {
+      category: CategoryId;
+      subcategory: string;
+      name: string;
+      bid: number;
+      whatsapp: string;
+      instagram: string;
+      slogan: string;
+      imageUrl: string;
+    }) => {
+      const newBusiness: Business = {
+        id: 'pub-' + Date.now(),
+        name: data.name,
         category: data.category,
+        subcategory: data.subcategory,
+        bid: data.bid,
+        owner: 'Vos',
+        address: 'Villaguay, Entre Ríos',
+        image: data.imageUrl || '',
+        whatsapp: data.whatsapp.startsWith('http') ? data.whatsapp : `https://wa.me/${data.whatsapp.replace(/\D/g, '')}`,
+        instagram: data.instagram.startsWith('http') ? data.instagram : `https://instagram.com/${data.instagram.replace('@', '')}`,
+        slogan: data.slogan || 'Nuevo comercio en el ranking',
+        daysAtTop: 0,
+        clickCount: 0,
       };
-      const next: AppState = {
-        ...prev,
-        businesses: [...prev.businesses, newBusiness],
-        events: [newEvent, ...prev.events],
-      };
-      saveState(next);
-      return next;
-    });
 
-    setShowConfetti(true);
-    play('coin');
-    setTimeout(() => setShowConfetti(false), 3000);
-  };
+      setAppState((prev) => {
+        if (!prev) return prev;
+        const catLabel = categories.find((c) => c.id === data.category)?.label || '';
+        const subLabel = categories.find((c) => c.id === data.category)?.subcategories.find((s) => s.id === data.subcategory)?.label || '';
+        const newEvent: LiveEvent = {
+          id: 'pub-event-' + Date.now(),
+          message: `🆕 ${data.name} se sumó al ranking de ${catLabel}${subLabel ? ` · ${subLabel}` : ''} con ${formatARS(data.bid)}`,
+          timeAgo: 'hace instantes',
+          category: data.category,
+        };
+        const next: AppState = {
+          ...prev,
+          businesses: [...prev.businesses, newBusiness],
+          events: [newEvent, ...prev.events],
+        };
+        saveState(next);
+        return next;
+      });
+
+      setShowConfetti(true);
+      play('coin');
+      setTimeout(() => setShowConfetti(false), 3000);
+    },
+    [play, setAppState],
+  );
+
+  const handleOutbid = useCallback((business: Business) => {
+    play('click');
+    setOutbidTarget(business);
+    setOutbidOpen(true);
+  }, [play]);
+
+  const handleEmptyBid = useCallback(() => {
+    play('click');
+    setOutbidTarget(null);
+    setOutbidOpen(true);
+  }, [play]);
+
+  const handleLastPositionJoin = useCallback(() => {
+    play('click');
+    setOutbidTarget(null);
+    setLastPositionOpen(true);
+  }, [play]);
+
+  const handleClaim = useCallback((business: Business) => {
+    play('click');
+    setClaimTarget(business);
+    setClaimOpen(true);
+  }, [play]);
+
+  if (!isMounted || !appState) {
+    return (
+      <div className="min-h-screen bg-panel flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neon-purple"></div>
+      </div>
+    );
+  }
+
+  const allBusinesses = appState.businesses;
+  const allEvents = appState.events;
+
+  const rankedBusinesses = getBusinessesByCategory(selectedCategory, selectedSubcategory, allBusinesses);
+  const leader = rankedBusinesses[0];
+  const rest = rankedBusinesses.slice(1);
+  const currentCategory = categories.find((c) => c.id === selectedCategory);
+  const currentSub = currentCategory?.subcategories.find((s) => s.id === selectedSubcategory);
+  const isEmpty = rankedBusinesses.length === 0;
+
+  const currentLowestBid = rankedBusinesses.length > 0
+    ? rankedBusinesses[rankedBusinesses.length - 1].bid
+    : MIN_BID;
 
   const outbidTargetPosition = outbidTarget
     ? rankedBusinesses.findIndex((b) => b.id === outbidTarget.id) + 1
@@ -186,6 +225,12 @@ export default function Home() {
             Destroná al líder, dominá tu categoría y conquistá la atención de toda la ciudad.
           </p>
         </motion.div>
+
+        {/* Global Leaders */}
+        <GlobalLeaders businesses={allBusinesses} onClaim={handleClaim} />
+
+        {/* Month Countdown */}
+        <MonthCountdown />
 
         {/* Monthly reset banner */}
         <motion.div
@@ -261,7 +306,7 @@ export default function Home() {
               </motion.div>
             ) : (
               <>
-                {leader && <LeaderCard business={leader} onOutbid={handleOutbid} />}
+                {leader && <LeaderCard business={leader} onOutbid={handleOutbid} onClaim={handleClaim} />}
                 <div className="space-y-3">
                   <AnimatePresence>
                     {rest.map((business, index) => (
@@ -271,10 +316,16 @@ export default function Home() {
                         position={index + 2}
                         topBid={leader.bid}
                         onOutbid={handleOutbid}
+                        onClaim={handleClaim}
                       />
                     ))}
                   </AnimatePresence>
                 </div>
+                <LastPositionCard
+                  onJoin={handleLastPositionJoin}
+                  currentLowestBid={currentLowestBid}
+                  discount={appState.lastPositionDiscount}
+                />
               </>
             )}
           </motion.div>
@@ -337,6 +388,20 @@ export default function Home() {
         rankedCount={rankedBusinesses.length}
         onConfirm={handleConfirmBid}
       />
+      <LastPositionModal
+        open={lastPositionOpen}
+        onOpenChange={setLastPositionOpen}
+        category={selectedCategory}
+        subcategory={selectedSubcategory}
+        discountedPrice={Math.round(currentLowestBid * (appState.lastPositionDiscount / 100))}
+      />
+      {claimTarget && (
+        <ClaimBusinessModal
+          open={claimOpen}
+          onOpenChange={setClaimOpen}
+          business={claimTarget}
+        />
+      )}
     </div>
   );
 }

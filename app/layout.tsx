@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Space_Grotesk, Plus_Jakarta_Sans } from 'next/font/google';
+import FloatingControls from '@/components/FloatingControls';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -15,6 +16,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('http://localhost:3000'),
   title: 'VILLAGUAY OUTBID — Leaderboard Competitivo de Comercios',
   description:
     'La plataforma donde los comercios de Villaguay compiten en tiempo real por el puesto #1. Pujá, destroná y dominá tu categoría.',
@@ -32,7 +34,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${spaceGrotesk.variable} ${plusJakarta.variable} dark`}>
-      <body className="font-body antialiased min-h-screen">{children}</body>
+      <body className="font-body antialiased min-h-screen">
+        <FloatingControls />
+        {children}
+      </body>
     </html>
   );
 }

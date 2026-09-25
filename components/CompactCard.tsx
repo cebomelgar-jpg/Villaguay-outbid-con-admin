@@ -1,24 +1,29 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Swords, MessageCircle, Instagram, TrendingUp, Eye } from 'lucide-react';
+import { Swords, MessageCircle, Instagram, TrendingUp, Eye, Building2 } from 'lucide-react';
 import { type Business, formatARS, MIN_INCREMENT } from '@/lib/mockData';
 import { incrementBusinessClick } from '@/lib/store';
+import { isSeedBusiness } from '@/src/data/villaguaySeed';
+import { getStorePlaceholder, getCategoryPlaceholder } from '@/lib/imageUtils';
 
 interface CompactCardProps {
   business: Business;
   position: number;
   topBid: number;
   onOutbid: (business: Business) => void;
+  onClaim?: (business: Business) => void;
 }
 
-export function CompactCard({ business, position, topBid, onOutbid }: CompactCardProps) {
+export function CompactCard({ business, position, topBid, onOutbid, onClaim }: CompactCardProps) {
   const diffToTop = topBid - business.bid;
   const suggestedBid = business.bid + MIN_INCREMENT;
 
   const handleClick = () => {
     incrementBusinessClick(business.id);
   };
+
+  const isSeed = isSeedBusiness(business.id);
 
   const positionColors: Record<number, string> = {
     2: 'text-slate-300',
@@ -66,7 +71,14 @@ export function CompactCard({ business, position, topBid, onOutbid }: CompactCar
           <span className={`font-display text-lg sm:text-xl font-bold ${positionColors[position] || 'text-muted-foreground'}`}>#{position}</span>
         </div>
         <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-lg overflow-hidden">
-          <img src={business.image} alt={business.name} className="w-full h-full object-cover" />
+          <img
+            src={business.image || getCategoryPlaceholder(business.category, business.name)}
+            alt={business.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = getCategoryPlaceholder(business.category, business.name);
+            }}
+          />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-display text-sm sm:text-base font-bold text-foreground truncate">{business.name}</h3>
@@ -91,6 +103,11 @@ export function CompactCard({ business, position, topBid, onOutbid }: CompactCar
             <a href={business.instagram} target="_blank" rel="noopener noreferrer" onClick={handleClick} className="p-2 rounded-lg glass-panel-hover text-neon-purple hover:text-neon-purple" title="Instagram">
               <Instagram className="h-4 w-4" />
             </a>
+            {isSeed && onClaim && (
+              <button onClick={() => onClaim(business)} className="p-2 rounded-lg glass-panel-hover text-neon-purple hover:text-neon-purple border border-neon-purple/30" title="Reclamar comercio">
+                <Building2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
           <button
             onClick={() => onOutbid(business)}

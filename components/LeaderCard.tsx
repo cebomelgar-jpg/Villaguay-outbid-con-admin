@@ -1,21 +1,26 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Crown, Swords, MessageCircle, Instagram, MapPin, Clock, Eye } from 'lucide-react';
+import { Crown, Swords, MessageCircle, Instagram, MapPin, Clock, Eye, Building2 } from 'lucide-react';
 import { type Business, formatARS, MIN_INCREMENT } from '@/lib/mockData';
 import { incrementBusinessClick } from '@/lib/store';
+import { isSeedBusiness } from '@/src/data/villaguaySeed';
+import { getStorePlaceholder, getCategoryPlaceholder } from '@/lib/imageUtils';
 
 interface LeaderCardProps {
   business: Business;
   onOutbid: (business: Business) => void;
+  onClaim?: (business: Business) => void;
 }
 
-export function LeaderCard({ business, onOutbid }: LeaderCardProps) {
+export function LeaderCard({ business, onOutbid, onClaim }: LeaderCardProps) {
   const suggestedBid = business.bid + MIN_INCREMENT;
 
   const handleClick = () => {
     incrementBusinessClick(business.id);
   };
+
+  const isSeed = isSeedBusiness(business.id);
 
   return (
     <motion.div
@@ -28,7 +33,14 @@ export function LeaderCard({ business, onOutbid }: LeaderCardProps) {
       <div className="rounded-2xl bg-gradient-to-br from-neon-gold/30 via-neon-gold/10 to-neon-gold/30 p-[2px]">
         <div className="rounded-2xl bg-panel/80 backdrop-blur-xl overflow-hidden">
           <div className="relative h-48 sm:h-64 overflow-hidden">
-            <img src={business.image} alt={business.name} className="w-full h-full object-cover" />
+            <img
+              src={business.image || getCategoryPlaceholder(business.category, business.name)}
+              alt={business.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = getCategoryPlaceholder(business.category, business.name);
+              }}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-panel via-panel/60 to-transparent" />
             <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-gold/20 backdrop-blur-md border border-neon-gold/50">
               <Crown className="h-4 w-4 text-neon-gold" />
@@ -82,6 +94,14 @@ export function LeaderCard({ business, onOutbid }: LeaderCardProps) {
               <a href={business.instagram} target="_blank" rel="noopener noreferrer" onClick={handleClick} className="flex items-center gap-2 px-3 py-2 rounded-lg glass-panel-hover text-xs font-body text-neon-purple hover:text-neon-purple">
                 <Instagram className="h-4 w-4" /> Instagram
               </a>
+              {isSeed && onClaim && (
+                <button
+                  onClick={() => onClaim(business)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg glass-panel-hover text-xs font-body text-neon-purple hover:text-neon-purple border border-neon-purple/30"
+                >
+                  <Building2 className="h-4 w-4" /> Reclamar
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -29,6 +29,49 @@
     --chart-4: 199 89% 48%;
     --chart-5: 0 72% 51%;
     --radius: 0.75rem;
+    
+    /* Theme-specific variables */
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #121216;
+    --bg-tertiary: #1a1a20;
+    --bg-panel: rgba(18, 18, 22, 0.8);
+    --text-primary: #ffffff;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    
+    /* Neon colors */
+    --neon-purple: #A855F7;
+    --neon-green: #00FF87;
+    --neon-gold: #FFD700;
+    --neon-blue: #3B82F6;
+    --neon-pink: #EC4899;
+    --neon-red: #EF4444;
+  }
+  
+  .light {
+    --bg-primary: #F8FAFC;
+    --bg-secondary: #F1F5F9;
+    --bg-tertiary: #E2E8F0;
+    --bg-panel: rgba(255, 255, 255, 0.8);
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.05);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    
+    /* Neon colors adjusted for light backgrounds */
+    --neon-purple: #7C3AED;
+    --neon-green: #059669;
+    --neon-gold: #D97706;
+    --neon-blue: #2563EB;
+    --neon-pink: #DB2777;
+    --neon-red: #DC2626;
   }
 }
 
@@ -38,28 +81,36 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-color: #0B0F19;
+    background-color: var(--bg-primary);
     background-image:
       radial-gradient(at 0% 0%, hsla(258, 90%, 66%, 0.08) 0px, transparent 50%),
       radial-gradient(at 98% 1%, hsla(152, 100%, 50%, 0.06) 0px, transparent 50%),
       radial-gradient(at 50% 100%, hsla(222, 15%, 15%, 0.5) 0px, transparent 50%);
     background-attachment: fixed;
   }
+  
+  .light body {
+    background-color: var(--bg-primary);
+    background-image:
+      radial-gradient(at 0% 0%, hsla(258, 90%, 66%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 98% 1%, hsla(152, 100%, 50%, 0.04) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, hsla(222, 15%, 15%, 0.3) 0px, transparent 50%);
+  }
 }
 
 @layer components {
   .glass-panel {
-    background: rgba(17, 24, 39, 0.6);
+    background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
   }
 
   .glass-panel-hover {
-    background: rgba(17, 24, 39, 0.6);
+    background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   .glass-panel-hover:hover {
@@ -68,22 +119,22 @@
   }
 
   .neon-text-green {
-    color: #00FF87;
+    color: var(--neon-green);
     text-shadow: 0 0 10px rgba(0, 255, 135, 0.5), 0 0 20px rgba(0, 255, 135, 0.3);
   }
 
   .neon-text-purple {
-    color: #8B5CF6;
-    text-shadow: 0 0 10px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.3);
+    color: var(--neon-purple);
+    text-shadow: 0 0 10px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.3);
   }
 
   .neon-text-gold {
-    color: #FFD700;
+    color: var(--neon-gold);
     text-shadow: 0 0 10px rgba(255, 215, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.3);
   }
 
   .gold-border {
-    border: 2px solid #FFD700;
+    border: 2px solid var(--neon-gold);
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 215, 0, 0.1);
   }
 

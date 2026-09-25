@@ -14,6 +14,8 @@ import {
   ExternalLink,
   CheckCircle2,
   Calendar,
+  Upload,
+  X,
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,6 +35,8 @@ import {
   MERCADO_PAGO_LINK,
   SUPPORT_WHATSAPP,
 } from '@/lib/mockData';
+import { processImage, getCategoryPlaceholder } from '@/lib/imageUtils';
+import { audioManager } from '@/lib/audioManager';
 
 export interface BidSubmission {
   business: Business;
@@ -74,6 +78,8 @@ export function OutbidModal({
     imageUrl: '',
     slogan: '',
   });
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const currentCat = categories.find((c) => c.id === category);
   const currentSub = currentCat?.subcategories.find((s) => s.id === subcategory);
@@ -104,16 +110,40 @@ export function OutbidModal({
     setFormData({ ...formData, bid: String(current + amount) });
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const base64 = await processImage(file);
+      setFormData({ ...formData, imageUrl: base64 });
+      setImagePreview(base64);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Error al procesar la imagen');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, imageUrl: '' });
+    setImagePreview('');
+  };
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    audioManager.playClick(); // Play click sound on form submit
     setStep('payment');
   };
 
   const handleConfirmPaid = () => {
+    audioManager.playClick(); // Play click sound
     setStep('confirm');
   };
 
   const handleFinalConfirm = () => {
+    audioManager.playOutbid(); // Play victory sound when confirming bid
     setStep('success');
 
     const newBusiness: Business = {
@@ -124,9 +154,7 @@ export function OutbidModal({
       bid: bidValue,
       owner: 'Vos',
       address: 'Villaguay, Entre Ríos',
-      image:
-        formData.imageUrl ||
-        'https://images.pexels.com/photos/3182834/pexels-photo-3182834.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+      image: formData.imageUrl || '',
       whatsapp: formData.whatsapp.startsWith('http')
         ? formData.whatsapp
         : `https://wa.me/${formData.whatsapp.replace(/\D/g, '')}`,
@@ -285,10 +313,50 @@ export function OutbidModal({
                     </div>
                   </div>
 
-                  {/* Image URL */}
+                  {/* Image Upload */}
                   <div>
-                    <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Logo / Imagen (URL)</label>
-                    <input value={formData.imageUrl} onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} placeholder="https://..." className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-neon-green/50 transition-colors" />
+                    <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Logo / Imagen</label>
+                    <div className="space-y-2">
+                      {imagePreview ? (
+                        <div className="relative">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-32 object-cover rounded-lg border border-white/10"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm text-white hover:bg-destructive transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="glass-panel rounded-lg p-4 border-2 border-dashed border-white/10 hover:border-neon-purple/30 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={uploadingImage}
+                            className="hidden"
+                            id="image-upload"
+                          />
+                          <label
+                            htmlFor="image-upload"
+                            className="flex flex-col items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <Upload className="h-6 w-6 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground font-body">
+                              {uploadingImage ? 'Procesando...' : 'Click para subir imagen'}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground/50 font-body">
+                              Máximo 2MB
+                            </span>
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Slogan */}

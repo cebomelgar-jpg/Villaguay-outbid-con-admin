@@ -85,6 +85,7 @@ export const categories: Category[] = [
       { id: 'dieteticas', label: 'Dietéticas' },
       { id: 'kinesiologia', label: 'Kinesiología & Masajes' },
       { id: 'consultorios', label: 'Consultorios Médicos & Odontología' },
+      { id: 'clinicas', label: 'Clínicas & Laboratorios' },
     ],
   },
   {
@@ -104,9 +105,10 @@ export const categories: Category[] = [
     label: 'Oficios & Servicio Técnico Hogar',
     emoji: '🛠️',
     subcategories: [
-      { id: 'electricidad', label: 'Electricidad/Plomería/Gas' },
+      { id: 'electricidad', label: 'Electricidad' },
       { id: 'refrigeracion', label: 'Refrigeración & Electrodomésticos' },
-      { id: 'jardines', label: 'Jardines & Piletas' },
+      { id: 'plomeria', label: 'Plomería' },
+      { id: 'jardines', label: 'Jardinería & Piletas' },
       { id: 'cerrajeria', label: 'Cerrajería' },
       { id: 'pintura', label: 'Pintura & Limpieza' },
     ],
