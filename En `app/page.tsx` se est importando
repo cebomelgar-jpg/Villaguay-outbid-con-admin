@@ -1,0 +1,1 @@
+import { BusinessDetailModal } from '@/components/BusinessDetailModal';
