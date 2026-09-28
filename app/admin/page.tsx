@@ -44,6 +44,12 @@ import {
   Wrench,
   Star,
   Award,
+  Trophy,
+  Users,
+  TrendingUp,
+  Play,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 import {
   getStoredState,
@@ -86,7 +92,7 @@ import {
 } from '@/lib/mockData';
 import { OFICIO_TRADES, VILLAGUAY_ZONES, type Oficio, type Medal } from '@/lib/oficiosData';
 
-type Tab = 'rankings' | 'pending' | 'claims' | 'categories' | 'content' | 'season' | 'marquee' | 'metrics' | 'oficios' | 'settings';
+type Tab = 'rankings' | 'pending' | 'claims' | 'categories' | 'content' | 'season' | 'marquee' | 'metrics' | 'oficios' | 'tournament' | 'settings';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -222,12 +228,13 @@ export default function AdminPage() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide pb-2 flex-wrap items-center touch-scroll">
           {([
             { id: 'rankings' as Tab, label: 'Rankings & Pujas', icon: LayoutDashboard },
             { id: 'pending' as Tab, label: 'Aprobaciones', icon: Inbox, badge: state.pendingBids.filter(p => p.status === 'pending').length },
             { id: 'claims' as Tab, label: 'Reclamos', icon: UserCheck, badge: state.businessClaims.filter(c => c.status === 'pending').length },
             { id: 'oficios' as Tab, label: 'Oficios', icon: Wrench, badge: state.pendingOficios.filter(p => p.status === 'pending').length },
+            { id: 'tournament' as Tab, label: 'Torneo Publicistas', icon: Trophy },
             { id: 'categories' as Tab, label: 'Categorías', icon: Layers },
             { id: 'content' as Tab, label: 'Contenido', icon: Type },
             { id: 'season' as Tab, label: 'Temporada', icon: Calendar },
@@ -261,12 +268,13 @@ export default function AdminPage() {
           {activeTab === 'rankings' && <RankingsTab key="rankings" state={state} updateState={updateState} />}
           {activeTab === 'pending' && <PendingTab key="pending" state={state} updateState={updateState} />}
           {activeTab === 'claims' && <ClaimsTab key="claims" state={state} updateState={updateState} />}
+          {activeTab === 'oficios' && <OficiosTab key="oficios" state={state} updateState={updateState} />}
+          {activeTab === 'tournament' && <TournamentTab key="tournament" state={state} updateState={updateState} />}
           {activeTab === 'categories' && <CategoriesTab key="categories" state={state} updateState={updateState} />}
           {activeTab === 'content' && <ContentTab key="content" state={state} updateState={updateState} />}
           {activeTab === 'season' && <SeasonTab key="season" state={state} updateState={updateState} />}
           {activeTab === 'marquee' && <MarqueeTab key="marquee" state={state} updateState={updateState} />}
           {activeTab === 'metrics' && <MetricsTab key="metrics" state={state} updateState={updateState} />}
-          {activeTab === 'oficios' && <OficiosTab key="oficios" state={state} updateState={updateState} />}
           {activeTab === 'settings' && <SettingsTab key="settings" state={state} updateState={updateState} />}
         </AnimatePresence>
       </div>
@@ -331,7 +339,7 @@ function RankingsTab({ state, updateState }: { state: AppState; updateState: (u:
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
       {/* Category + Sub selectors */}
       <div className="space-y-3 mb-4">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 touch-scroll">
           {categories.map((cat) => (
             <button key={cat.id} onClick={() => { setSelCat(cat.id); setSelSub(null); }} className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all ${selCat === cat.id ? 'bg-neon-green/15 border border-neon-green/40 text-neon-green' : 'glass-panel text-muted-foreground'}`}>
               <span>{cat.emoji}</span>{cat.label}
@@ -339,7 +347,7 @@ function RankingsTab({ state, updateState }: { state: AppState; updateState: (u:
           ))}
         </div>
         {currentCat && currentCat.subcategories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 touch-scroll">
             <button onClick={() => setSelSub(null)} className={`px-3 py-1.5 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all ${selSub === null ? 'bg-neon-purple/15 border border-neon-purple/30 text-neon-purple' : 'glass-panel text-muted-foreground'}`}>Todos</button>
             {currentCat.subcategories.map((sub) => (
               <button key={sub.id} onClick={() => setSelSub(sub.id)} className={`px-3 py-1.5 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all ${selSub === sub.id ? 'bg-neon-purple/15 border border-neon-purple/30 text-neon-purple' : 'glass-panel text-muted-foreground'}`}>{sub.label}</button>
@@ -1925,6 +1933,449 @@ function AddOficioModal({ onAdd, onClose }: { onAdd: (o: Omit<Oficio, 'id'>) => 
         </button>
       </motion.div>
     </div>
+  );
+}
+
+/* ============ TOURNAMENT TAB ============ */
+
+function TournamentTab({ state, updateState }: { state: AppState; updateState: (u: (prev: AppState) => AppState) => void }) {
+  const [loading, setLoading] = useState(false);
+  const [publicistas, setPublicistas] = useState<any[]>([]);
+  const [competencia, setCompetencia] = useState<any>(null);
+  const [editingCompetencia, setEditingCompetencia] = useState(false);
+  const [editingPublicista, setEditingPublicista] = useState<any>(null);
+  const [competenciaForm, setCompetenciaForm] = useState({
+    titulo: '',
+    monto_premio: 100000,
+    fecha_inicio: '',
+    fecha_fin: '',
+    esta_activo: false,
+  });
+
+  useEffect(() => {
+    loadTournamentData();
+  }, []);
+
+  const loadTournamentData = async () => {
+    setLoading(true);
+    try {
+      const [rankingRes, compRes] = await Promise.all([
+        fetch('/api/publicistas'),
+        fetch('/api/publicistas/ranking'),
+      ]);
+
+      if (rankingRes.ok) {
+        const rankingData = await rankingRes.json();
+        setPublicistas(rankingData.publicistas || []);
+      }
+
+      if (compRes.ok) {
+        const compData = await compRes.json();
+        setCompetencia(compData.competencia);
+        if (compData.competencia) {
+          setCompetenciaForm({
+            titulo: compData.competencia.titulo,
+            monto_premio: compData.competencia.monto_premio,
+            fecha_inicio: compData.competencia.fecha_inicio.split('T')[0],
+            fecha_fin: compData.competencia.fecha_fin.split('T')[0],
+            esta_activo: compData.competencia.esta_activo,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading tournament data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveCompetencia = async () => {
+    try {
+      const response = await fetch('/api/admin/torneo/configurar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(competenciaForm),
+      });
+
+      if (response.ok) {
+        setCompetencia({ ...competenciaForm, id: competencia?.id });
+        setEditingCompetencia(false);
+        loadTournamentData();
+      }
+    } catch (error) {
+      console.error('Error saving competition:', error);
+    }
+  };
+
+  const handleUpdatePublicista = async (publicista: any) => {
+    try {
+      let response;
+      
+      if (publicista.id) {
+        // Update existing
+        response = await fetch(`/api/admin/torneo/publicistas/${publicista.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(publicista),
+        });
+      } else {
+        // Create new
+        response = await fetch('/api/admin/torneo/publicistas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(publicista),
+        });
+      }
+
+      if (response.ok) {
+        setEditingPublicista(null);
+        loadTournamentData();
+      }
+    } catch (error) {
+      console.error('Error updating publicista:', error);
+    }
+  };
+
+  const handleDeletePublicista = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este publicista?')) return;
+
+    try {
+      const response = await fetch(`/api/admin/torneo/publicistas/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        loadTournamentData();
+      }
+    } catch (error) {
+      console.error('Error deleting publicista:', error);
+    }
+  };
+
+  const handleResetPoints = async () => {
+    if (!confirm('¿Estás seguro de reiniciar todas las puntuaciones a 0?')) return;
+
+    try {
+      const response = await fetch('/api/admin/torneo/reiniciar-puntos', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        loadTournamentData();
+      }
+    } catch (error) {
+      console.error('Error resetting points:', error);
+    }
+  };
+
+  const formatARS = (amount: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neon-gold"></div>
+      </motion.div>
+    );
+  }
+
+  const totalVisits = publicistas.reduce((sum, p) => sum + p.puntos_mes_actual, 0);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="space-y-6">
+      {/* Competition Configuration */}
+      <div className="glass-panel rounded-2xl p-6 border border-neon-gold/20">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-neon-gold" />
+            Configuración del Torneo
+          </h3>
+          {!editingCompetencia && (
+            <button
+              onClick={() => setEditingCompetencia(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg glass-panel-hover text-xs font-body text-muted-foreground hover:text-neon-gold transition-colors"
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+              Editar
+            </button>
+          )}
+        </div>
+
+        {editingCompetencia ? (
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Título del Torneo</label>
+              <input
+                value={competenciaForm.titulo}
+                onChange={(e) => setCompetenciaForm({ ...competenciaForm, titulo: e.target.value })}
+                className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-gold/50"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Monto del Premio (ARS)</label>
+              <input
+                type="number"
+                value={competenciaForm.monto_premio}
+                onChange={(e) => setCompetenciaForm({ ...competenciaForm, monto_premio: parseFloat(e.target.value) })}
+                className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-gold/50"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Fecha Inicio</label>
+                <input
+                  type="date"
+                  value={competenciaForm.fecha_inicio}
+                  onChange={(e) => setCompetenciaForm({ ...competenciaForm, fecha_inicio: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-gold/50"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Fecha Fin</label>
+                <input
+                  type="date"
+                  value={competenciaForm.fecha_fin}
+                  onChange={(e) => setCompetenciaForm({ ...competenciaForm, fecha_fin: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-gold/50"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={competenciaForm.esta_activo}
+                  onChange={(e) => setCompetenciaForm({ ...competenciaForm, esta_activo: e.target.checked })}
+                  className="w-4 h-4 rounded border-white/10 bg-white/5 text-neon-gold focus:ring-neon-gold/50"
+                />
+                <span className="text-xs font-body text-foreground">Torneo Activo</span>
+              </label>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveCompetencia}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-neon-gold text-obsidian font-display font-bold text-sm hover:shadow-[0_0_20px_rgba(255,215,0,0.4)] transition-all"
+              >
+                <Save className="h-4 w-4" />
+                Guardar
+              </button>
+              <button
+                onClick={() => setEditingCompetencia(false)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg glass-panel-hover text-xs font-body text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="glass-panel rounded-lg p-3">
+              <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider mb-1">Estado</p>
+              <p className={`text-sm font-display font-bold ${competencia?.esta_activo ? 'text-neon-green' : 'text-muted-foreground'}`}>
+                {competencia?.esta_activo ? 'Activo' : 'Pausado'}
+              </p>
+            </div>
+            <div className="glass-panel rounded-lg p-3">
+              <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider mb-1">Premio</p>
+              <p className="text-sm font-display font-bold text-neon-gold">
+                {competencia ? formatARS(competencia.monto_premio) : formatARS(100000)}
+              </p>
+            </div>
+            <div className="glass-panel rounded-lg p-3">
+              <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider mb-1">Inicio</p>
+              <p className="text-sm font-display font-bold text-foreground">
+                {competencia?.fecha_inicio?.split('T')[0] || '-'}
+              </p>
+            </div>
+            <div className="glass-panel rounded-lg p-3">
+              <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider mb-1">Fin</p>
+              <p className="text-sm font-display font-bold text-foreground">
+                {competencia?.fecha_fin?.split('T')[0] || '-'}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="glass-panel rounded-xl p-4 border border-neon-purple/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Users className="h-4 w-4 text-neon-purple" />
+            <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider">Participantes</p>
+          </div>
+          <p className="text-2xl font-display font-bold text-neon-purple">{publicistas.length}</p>
+        </div>
+        <div className="glass-panel rounded-xl p-4 border border-neon-green/20">
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="h-4 w-4 text-neon-green" />
+            <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider">Visitas Totales</p>
+          </div>
+          <p className="text-2xl font-display font-bold text-neon-green">{totalVisits}</p>
+        </div>
+        <div className="glass-panel rounded-xl p-4 border border-neon-gold/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Award className="h-4 w-4 text-neon-gold" />
+            <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider">Líder</p>
+          </div>
+          <p className="text-lg font-display font-bold text-neon-gold truncate">
+            {publicistas[0]?.nombre_publico || '-'}
+          </p>
+        </div>
+        <div className="glass-panel rounded-xl p-4 border border-neon-purple/20">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="h-4 w-4 text-neon-purple" />
+            <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider">Acciones</p>
+          </div>
+          <button
+            onClick={handleResetPoints}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/15 border border-destructive/30 text-destructive text-xs font-body font-medium hover:bg-destructive/25 transition-colors"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reiniciar Puntos
+          </button>
+        </div>
+      </div>
+
+      {/* Participants */}
+      <div className="glass-panel rounded-2xl border border-white/10 overflow-hidden">
+        <div className="p-4 border-b border-white/10 flex items-center justify-between">
+          <h3 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+            <Users className="h-4 w-4 text-neon-purple" />
+            Participantes
+          </h3>
+          <button
+            onClick={() => setEditingPublicista({ nombre_usuario: '', nombre_publico: '', whatsapp_contacto: '', puntos_mes_actual: 0 })}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neon-green/15 border border-neon-green/40 text-neon-green text-xs font-body font-medium hover:bg-neon-green/25 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Agregar
+          </button>
+        </div>
+
+        {publicistas.length === 0 ? (
+          <div className="p-8 text-center text-sm text-muted-foreground font-body">
+            No hay participantes en el torneo todavía.
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {publicistas.map((publicista, index) => (
+              <div key={publicista.id} className="p-4 flex items-center gap-4 hover:bg-white/5 transition-colors">
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                  <span className={`font-display text-sm font-bold ${index === 0 ? 'text-neon-gold' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                    #{index + 1}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-sm font-bold text-foreground truncate">{publicista.nombre_publico}</p>
+                  <p className="text-xs text-muted-foreground font-body">@{publicista.nombre_usuario}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-base font-bold text-neon-gold">{publicista.puntos_mes_actual}</p>
+                  <p className="text-[10px] text-muted-foreground font-body">puntos</p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => setEditingPublicista(publicista)}
+                    className="p-2 rounded-lg glass-panel-hover text-muted-foreground hover:text-neon-green transition-all"
+                    title="Editar"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeletePublicista(publicista.id)}
+                    className="p-2 rounded-lg glass-panel-hover text-muted-foreground hover:text-destructive transition-all"
+                    title="Eliminar"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Edit Publicista Modal */}
+      {editingPublicista && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setEditingPublicista(null)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-panel rounded-2xl p-6 max-w-md w-full space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+                <Edit2 className="h-5 w-5 text-neon-green" />
+                {editingPublicista.id ? 'Editar Participante' : 'Agregar Participante'}
+              </h3>
+              <button onClick={() => setEditingPublicista(null)} className="p-1.5 rounded-lg glass-panel-hover text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Nombre de Usuario</label>
+                <input
+                  value={editingPublicista.nombre_usuario}
+                  onChange={(e) => setEditingPublicista({ ...editingPublicista, nombre_usuario: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-green/50"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Nombre Público</label>
+                <input
+                  value={editingPublicista.nombre_publico}
+                  onChange={(e) => setEditingPublicista({ ...editingPublicista, nombre_publico: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-green/50"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">WhatsApp</label>
+                <input
+                  value={editingPublicista.whatsapp_contacto}
+                  onChange={(e) => setEditingPublicista({ ...editingPublicista, whatsapp_contacto: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-green/50"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-body font-medium text-muted-foreground uppercase tracking-wider mb-1 block">Puntos</label>
+                <input
+                  type="number"
+                  value={editingPublicista.puntos_mes_actual}
+                  onChange={(e) => setEditingPublicista({ ...editingPublicista, puntos_mes_actual: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2.5 rounded-lg glass-panel text-sm font-body text-foreground focus:outline-none focus:border-neon-green/50"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleUpdatePublicista(editingPublicista)}
+                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg bg-neon-green text-obsidian font-display font-bold text-sm hover:shadow-[0_0_20px_rgba(0,255,135,0.4)] transition-all"
+              >
+                <Save className="h-4 w-4" />
+                Guardar
+              </button>
+              <button
+                onClick={() => setEditingPublicista(null)}
+                className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg glass-panel-hover text-xs font-body text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+                Cancelar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </motion.div>
   );
 }
 

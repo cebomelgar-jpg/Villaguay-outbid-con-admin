@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Space_Grotesk, Plus_Jakarta_Sans } from 'next/font/google';
 import FloatingControls from '@/components/FloatingControls';
+import { ReferralTracker } from '@/components/ReferralTracker';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${spaceGrotesk.variable} ${plusJakarta.variable} dark`}>
       <body className="font-body antialiased min-h-screen">
+        <ReferralTracker />
         <FloatingControls />
         {children}
       </body>

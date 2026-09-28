@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Radio, BookOpen, Store, Wrench } from 'lucide-react';
+import { Radio, BookOpen, Store, Wrench, Trophy } from 'lucide-react';
 import Link from 'next/link';
 
 interface HeaderProps {
@@ -36,6 +36,15 @@ export function Header({ onOpenReglamento, onOpenPublicar }: HeaderProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Tournament Banner */}
+            <Link
+              href="/ranking-publicistas"
+              className="hidden sm:flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-lg bg-neon-gold/15 border border-neon-gold/40 text-neon-gold text-xs sm:text-sm font-display font-bold hover:bg-neon-gold/25 transition-all"
+            >
+              <Trophy className="h-4 w-4" />
+              <span>Torneo $100k</span>
+            </Link>
+
             {/* Live badge */}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-neon-green/10 border border-neon-green/30">
               <span className="relative flex h-2.5 w-2.5">
@@ -46,6 +55,14 @@ export function Header({ onOpenReglamento, onOpenPublicar }: HeaderProps) {
                 LIVE
               </span>
             </div>
+
+            {/* Mobile Tournament Banner */}
+            <Link
+              href="/ranking-publicistas"
+              className="sm:hidden flex items-center gap-1.5 px-3 py-2 rounded-lg bg-neon-gold/15 border border-neon-gold/40 text-neon-gold text-xs font-display font-bold"
+            >
+              <Trophy className="h-4 w-4" />
+            </Link>
 
             {/* Oficios */}
             <Link

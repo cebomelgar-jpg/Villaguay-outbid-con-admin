@@ -41,7 +41,7 @@ export function CategorySelector({
   return (
     <div className="space-y-3">
       {/* Top 5 featured categories */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 pb-1">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 snap-x snap-mandatory touch-scroll">
         {featuredCategories.map((cat, index) => {
           const isActive = selected === cat.id;
           return (
@@ -51,7 +51,7 @@ export function CategorySelector({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.04 }}
               onClick={() => handleSelectCategory(cat.id)}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-full font-body text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-300 flex-shrink-0 ${
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-full font-body text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-300 flex-shrink-0 snap-start ${
                 isActive
                   ? 'bg-neon-green/15 border border-neon-green/50 text-neon-green shadow-[0_0_15px_rgba(0,255,135,0.2)]'
                   : 'glass-panel text-muted-foreground hover:text-foreground hover:border-white/20'
@@ -225,11 +225,11 @@ export function CategorySelector({
                 Filtrar por sub-rubro
               </span>
             </div>
-            <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="w-full overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0 pb-2 snap-x snap-mandatory touch-scroll">
               <div className="flex gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
                 <button
                   onClick={() => onSelectSubcategory(null)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all snap-start ${
                     selectedSubcategory === null
                       ? 'bg-neon-purple/15 border border-neon-purple/40 text-neon-purple'
                       : 'glass-panel text-muted-foreground hover:text-foreground'
@@ -241,7 +241,7 @@ export function CategorySelector({
                   <button
                     key={sub.id}
                     onClick={() => onSelectSubcategory(sub.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-body font-medium whitespace-nowrap transition-all snap-start ${
                       selectedSubcategory === sub.id
                         ? 'bg-neon-purple/15 border border-neon-purple/40 text-neon-purple'
                         : 'glass-panel text-muted-foreground hover:text-foreground'
